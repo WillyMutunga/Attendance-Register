@@ -24,15 +24,16 @@ function App() {
 
   // Nav State
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('dashboard'); // dashboard, my-classes, available-classes
+  const [viewMode, setViewMode] = useState('dashboard'); // dashboard, my-classes, available-classes, profile
 
   // Handlers
   const fetchClasses = async () => {
     try {
       const res = await fetch("http://localhost:5000/classes");
       const data = await res.json();
-      setClasses(data);
-    } catch (err) { console.error(err); }
+      if (Array.isArray(data)) setClasses(data);
+      else setClasses([]);
+    } catch (err) { console.error(err); setClasses([]); }
   };
 
   const fetchMyClasses = async () => {
@@ -41,8 +42,12 @@ function App() {
         headers: { "x-auth-token": token }
       });
       const data = await res.json();
-      setMyClasses(data);
-    } catch (err) { console.error(err); }
+      if (Array.isArray(data)) {
+        setMyClasses(data);
+      } else {
+        setMyClasses([]);
+      }
+    } catch (err) { console.error(err); setMyClasses([]); }
   };
 
   const fetchNotifications = async () => {
@@ -51,8 +56,9 @@ function App() {
         headers: { "x-auth-token": token }
       });
       const data = await res.json();
-      setNotifications(data);
-    } catch (err) { console.error(err); }
+      if (Array.isArray(data)) setNotifications(data);
+      else setNotifications([]);
+    } catch (err) { console.error(err); setNotifications([]); }
   };
 
   const markNotificationRead = async (id) => {
@@ -120,8 +126,9 @@ function App() {
         headers: { "x-auth-token": token }
       });
       const sessions = await res.json();
-      setClassSessions(sessions);
-    } catch (err) { console.error(err); }
+      if (Array.isArray(sessions)) setClassSessions(sessions);
+      else setClassSessions([]);
+    } catch (err) { console.error(err); setClassSessions([]); }
 
     if (user.role === 'admin') {
       try {
@@ -129,8 +136,9 @@ function App() {
           headers: { "x-auth-token": token }
         });
         const data = await res.json();
-        setClassStudents(data);
-      } catch (err) { console.error(err); }
+        if (Array.isArray(data)) setClassStudents(data);
+        else setClassStudents([]);
+      } catch (err) { console.error(err); setClassStudents([]); }
     }
   };
 
@@ -255,6 +263,32 @@ function App() {
     } catch (err) { alert("Error: " + err.message); }
   };
 
+  const updateProfile = async (e) => {
+    e.preventDefault();
+    const name = e.target.pName.value;
+    const email = e.target.pEmail.value;
+    const password = e.target.pPassword.value;
+
+    try {
+      const res = await fetch("http://localhost:5000/auth/profile", {
+        method: 'PUT',
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token
+        },
+        body: JSON.stringify({ name, email, password: password || undefined })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUser(prev => ({ ...prev, name: data.name, email: data.email }));
+        alert("Profile Updated Successfully!");
+        e.target.pPassword.value = ''; // Clear password field
+      } else {
+        alert(data.message || "Update Failed");
+      }
+    } catch (err) { alert(err.message); }
+  };
+
   // --- VIEWS ---
 
   if (!user) {
@@ -298,6 +332,7 @@ function App() {
           {user.role === 'student' && (
             <li className="nav-link" onClick={() => { setSelectedClass(null); setViewMode('available-classes'); setIsNavOpen(false); }}>Available Classes</li>
           )}
+          <li className="nav-link" onClick={() => { setSelectedClass(null); setViewMode('profile'); setIsNavOpen(false); }}>Account Details</li>
         </ul>
 
         {/* Notification Bell */}
@@ -334,8 +369,32 @@ function App() {
 
       <div className="App-container">
 
+        {/* PROFILE VIEW */}
+        {viewMode === 'profile' && !selectedClass && (
+          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <div className="attendance-card">
+              <h2>Account Details</h2>
+              <form onSubmit={updateProfile}>
+                <div className="form-group">
+                  <label>Name</label>
+                  <input name="pName" defaultValue={user.name} required />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input name="pEmail" defaultValue={user.email} required />
+                </div>
+                <div className="form-group">
+                  <label>New Password (Optional)</label>
+                  <input name="pPassword" type="password" placeholder="Leave blank to keep current" />
+                </div>
+                <button type="submit" style={{ marginTop: '20px' }}>Update Profile</button>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* STUDENT VIEW */}
-        {user.role === 'student' && (
+        {user.role === 'student' && viewMode !== 'profile' && (
           <>
             {!selectedClass ? (
               <div style={{ width: '100%', maxWidth: '800px' }}>
@@ -412,7 +471,7 @@ function App() {
         )}
 
         {/* ADMIN VIEW */}
-        {user.role === 'admin' && (
+        {user.role === 'admin' && viewMode !== 'profile' && (
           <>
             {!selectedClass ? (
               <div style={{ width: '100%', maxWidth: '800px' }}>

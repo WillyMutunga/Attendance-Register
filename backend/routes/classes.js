@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Class, User, ClassSession, Notification, sequelize } = require('../models');
 const { auth, isAdmin } = require('../middleware/authMiddleware');
+const { sendCalendarInvite } = require('../utils/emailService');
 
 // Get all classes (for selection/admin)
 router.get('/', async (req, res) => {
@@ -109,6 +110,16 @@ router.post('/:id/sessions', auth, isAdmin, async (req, res) => {
 
         if (notifications.length > 0) {
             await Notification.bulkCreate(notifications);
+
+            // Send Calendar Invites (Await for debugging to see logs)
+            const sessionData = {
+                topic,
+                startTime,
+                meetingLink,
+                className: clazz.name
+            };
+            console.log("Triggering email invite...");
+            await sendCalendarInvite(clazz.Users, sessionData);
         }
 
         res.json(session);
@@ -160,7 +171,9 @@ router.get('/:id/sessions', auth, async (req, res) => {
         if (!clazz) return res.status(404).json({ message: 'Class not found' });
 
         // Sort
-        clazz.Sessions.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        if (clazz.Sessions) {
+            clazz.Sessions.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        }
 
         res.json(clazz.Sessions);
     } catch (err) {

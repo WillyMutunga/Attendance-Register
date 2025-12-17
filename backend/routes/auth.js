@@ -1,83 +1,82 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const { User } = require('../models');
+const { auth } = require('../middleware/authMiddleware');
 
-// Register Route
+// Register
 router.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-        return res.status(400).json({ message: 'Please enter all fields' });
-    }
-
+    const { name, email, password, role } = req.body;
     try {
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
-            return res.status(400).json({ message: 'A user with that email exists' });
-        }
+        let user = await User.findOne({ where: { email } });
+        if (user) return res.status(400).json({ message: 'User already exists' });
 
-        const newUser = await User.create({ name, email, password });
+        user = await User.create({ name, email, password, role });
 
-        // Create token
-        const token = jwt.sign(
-            { id: newUser.id, role: newUser.role },
-            process.env.JWT_SECRET || 'secret',
-            { expiresIn: '1h' }
-        );
-
-        res.status(201).json({
-            token,
-            user: {
-                id: newUser.id,
-                name: newUser.name,
-                email: newUser.email,
-                role: newUser.role
-            }
+        const payload = { user: { id: user.id, role: user.role } };
+        jwt.sign(payload, 'secret', { expiresIn: '5d' }, (err, token) => {
+            if (err) throw err;
+            res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
         });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Login Route
+// Login
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Please enter all fields' });
-    }
-
     try {
         const user = await User.findOne({ where: { email } });
-        if (!user) {
-            return res.status(400).json({ message: 'User does not exist' });
-        }
+        if (!user) return res.status(400).json({ message: 'Invalid Credentials' });
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+        if (!isMatch) return res.status(400).json({ message: 'Invalid Credentials' });
+
+        const payload = { user: { id: user.id, role: user.role } };
+        jwt.sign(payload, 'secret', { expiresIn: '5d' }, (err, token) => {
+            if (err) throw err;
+            res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Current User (Profile)
+router.get('/me', auth, async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id, {
+            attributes: { exclude: ['password'] }
+        });
+        res.json(user);
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
+
+// Update Profile
+router.put('/profile', auth, async (req, res) => {
+    const { name, email, password } = req.body;
+    try {
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (name) user.name = name;
+        if (email) user.email = email;
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
         }
 
-        const token = jwt.sign(
-            { id: user.id, role: user.role },
-            process.env.JWT_SECRET || 'secret',
-            { expiresIn: '1h' }
-        );
+        await user.save();
 
-        res.status(200).json({
-            token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        // Return updated user without password
+        const updatedUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+        res.json(updatedUser);
+    } catch (err) {
+        res.status(500).send('Server Error');
     }
 });
 
