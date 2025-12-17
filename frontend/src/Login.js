@@ -18,6 +18,7 @@ function Login({ onLogin, onSwitchToRegister }) {
     setError('');
 
     try {
+      console.log("Attempting to login to:", API_BASE);
       const res = await fetch(API_BASE + '/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
