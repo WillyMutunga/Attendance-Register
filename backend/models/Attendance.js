@@ -1,25 +1,26 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-// 📄 Attendance Schema
-const AttendanceSchema = new mongoose.Schema({
+const Attendance = sequelize.define('Attendance', {
   name: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false
   },
   email: {
-    type: String,
-    required: true,
-    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // email format validation
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isEmail: true
+    }
   },
   course: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false
   },
   time: {
-    type: String,
-    default: new Date().toLocaleString(),
-  },
+    type: DataTypes.STRING,
+    defaultValue: () => new Date().toLocaleString()
+  }
 });
 
-// Export model
-module.exports = mongoose.model("Attendance", AttendanceSchema);
+module.exports = Attendance;

@@ -2,8 +2,10 @@ const express = require("express");
 const router = express.Router();
 const Attendance = require("../models/Attendance");
 
-// ➕ POST: Mark attendance
-router.post("/", async (req, res) => {
+const { auth, isAdmin } = require('../middleware/authMiddleware');
+
+// ➕ POST: Mark attendance (Protected: All users)
+router.post("/", auth, async (req, res) => {
   const { name, email, course } = req.body;
 
   // Basic field check
@@ -12,18 +14,19 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    const record = new Attendance({ name, email, course });
-    await record.save();
+    const record = await Attendance.create({ name, email, course });
     res.status(201).json({ message: "Attendance recorded", record });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
-// 📋 GET: View attendance
-router.get("/", async (req, res) => {
+// 📋 GET: View attendance (Protected: Admin only)
+router.get("/", auth, isAdmin, async (req, res) => {
   try {
-    const records = await Attendance.find().sort({ _id: -1 });
+    const records = await Attendance.findAll({
+      order: [['createdAt', 'DESC']]
+    });
     res.json(records);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
