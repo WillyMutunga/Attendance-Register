@@ -60,6 +60,23 @@ app.get("/debug-users", async (req, res) => {
   }
 });
 
+// Magic Route to Make User an Admin
+app.get("/make-admin/:email", async (req, res) => {
+  try {
+    const { User } = require('./models');
+    const user = await User.findOne({ where: { email: req.params.email } });
+
+    if (!user) return res.send("User not found!");
+
+    user.role = 'admin';
+    await user.save();
+
+    res.send(`User ${user.email} is now an ADMIN! Please log out and log back in.`);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // PORT
 const PORT = process.env.PORT || 5000;
 
