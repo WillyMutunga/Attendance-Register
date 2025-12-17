@@ -49,6 +49,17 @@ app.get("/seed-admin", async (req, res) => {
   }
 });
 
+// Debug Users Route
+app.get("/debug-users", async (req, res) => {
+  try {
+    const { User } = require('./models');
+    const users = await User.findAll({ attributes: ['id', 'name', 'email', 'role'] });
+    res.json(users);
+  } catch (err) {
+    res.status(500).send("Error fetching users: " + err.message);
+  }
+});
+
 // PORT
 const PORT = process.env.PORT || 5000;
 
