@@ -15,7 +15,8 @@ router.post('/register', async (req, res) => {
         user = await User.create({ name, email, password, role });
 
         const payload = { user: { id: user.id, role: user.role } };
-        jwt.sign(payload, 'secret', { expiresIn: '5d' }, (err, token) => {
+        const jwtSecret = process.env.JWT_SECRET || 'secret';
+        jwt.sign(payload, jwtSecret, { expiresIn: '5d' }, (err, token) => {
             if (err) throw err;
             res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
         });
@@ -35,7 +36,8 @@ router.post('/login', async (req, res) => {
         if (!isMatch) return res.status(400).json({ message: 'Invalid Credentials' });
 
         const payload = { user: { id: user.id, role: user.role } };
-        jwt.sign(payload, 'secret', { expiresIn: '5d' }, (err, token) => {
+        const jwtSecret = process.env.JWT_SECRET || 'secret';
+        jwt.sign(payload, jwtSecret, { expiresIn: '5d' }, (err, token) => {
             if (err) throw err;
             res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
         });

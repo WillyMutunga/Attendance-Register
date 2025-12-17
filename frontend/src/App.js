@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 import Login from "./Login";
 import Register from "./Register";
+import API_BASE from "./config";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -29,7 +30,7 @@ function App() {
   // Handlers
   const fetchClasses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/classes");
+      const res = await fetch(API_BASE + "/classes");
       const data = await res.json();
       if (Array.isArray(data)) setClasses(data);
       else setClasses([]);
@@ -38,7 +39,7 @@ function App() {
 
   const fetchMyClasses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/classes/my-classes", {
+      const res = await fetch(API_BASE + "/classes/my-classes", {
         headers: { "x-auth-token": token }
       });
       const data = await res.json();
@@ -52,7 +53,7 @@ function App() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch("http://localhost:5000/notifications", {
+      const res = await fetch(API_BASE + "/notifications", {
         headers: { "x-auth-token": token }
       });
       const data = await res.json();
@@ -63,7 +64,7 @@ function App() {
 
   const markNotificationRead = async (id) => {
     try {
-      await fetch(`http://localhost:5000/notifications/${id}/read`, {
+      await fetch(`${API_BASE}/notifications/${id}/read`, {
         method: 'PUT',
         headers: { "x-auth-token": token }
       });
@@ -103,7 +104,7 @@ function App() {
   // Actions
   const enrollInClass = async (classId) => {
     try {
-      const res = await fetch("http://localhost:5000/classes/enroll", {
+      const res = await fetch(API_BASE + "/classes/enroll", {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -122,7 +123,7 @@ function App() {
     setSelectedClass(c);
     setEditingSession(null);
     try {
-      const res = await fetch(`http://localhost:5000/classes/${c.id}/sessions`, {
+      const res = await fetch(`${API_BASE}/classes/${c.id}/sessions`, {
         headers: { "x-auth-token": token }
       });
       const sessions = await res.json();
@@ -132,7 +133,7 @@ function App() {
 
     if (user.role === 'admin') {
       try {
-        const res = await fetch(`http://localhost:5000/classes/${c.id}/students`, {
+        const res = await fetch(`${API_BASE}/classes/${c.id}/students`, {
           headers: { "x-auth-token": token }
         });
         const data = await res.json();
@@ -153,7 +154,7 @@ function App() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/classes", {
+      const res = await fetch(API_BASE + "/classes", {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -185,8 +186,8 @@ function App() {
 
     try {
       const url = editingSession
-        ? `http://localhost:5000/classes/sessions/${editingSession.id}`
-        : `http://localhost:5000/classes/${selectedClass.id}/sessions`;
+        ? `${API_BASE}/classes/sessions/${editingSession.id}`
+        : `${API_BASE}/classes/${selectedClass.id}/sessions`;
 
       const method = editingSession ? 'PUT' : 'POST';
 
@@ -212,7 +213,7 @@ function App() {
   const deleteSession = async (sessionId) => {
     if (!window.confirm("Are you sure you want to delete this session?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/classes/sessions/${sessionId}`, {
+      const res = await fetch(`${API_BASE}/classes/sessions/${sessionId}`, {
         method: 'DELETE',
         headers: { "x-auth-token": token }
       });
@@ -245,7 +246,7 @@ function App() {
   const submitAttendance = async (e, classData) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/attendance", {
+      const res = await fetch(API_BASE + "/attendance", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -270,7 +271,7 @@ function App() {
     const password = e.target.pPassword.value;
 
     try {
-      const res = await fetch("http://localhost:5000/auth/profile", {
+      const res = await fetch(API_BASE + "/auth/profile", {
         method: 'PUT',
         headers: {
           "Content-Type": "application/json",
@@ -294,7 +295,7 @@ function App() {
   if (!user) {
     return (
       <div className="App">
-        <header className="App-header"><h1>Moringa Attendance System</h1></header>
+        <header className="App-header"><h1>Online Attendance System</h1></header>
         <div className="App-container">
           {authView === "login" ?
             <Login onLogin={handleLogin} onSwitchToRegister={() => setAuthView("register")} /> :

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+import API_BASE from './config';
+
 function Login({ onLogin, onSwitchToRegister }) {
   const [formData, setFormData] = useState({
     email: '',
@@ -16,7 +18,7 @@ function Login({ onLogin, onSwitchToRegister }) {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:5000/auth/login', {
+      const res = await fetch(API_BASE + '/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
