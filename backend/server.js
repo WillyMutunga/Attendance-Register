@@ -22,6 +22,33 @@ app.use("/notifications", NotificationRoutes);
 // Root test route
 app.get("/", (req, res) => res.send("Attendance API is running ✅"));
 
+// Temporary Seed Route (Visit this ONCE to create admin)
+app.get("/seed-admin", async (req, res) => {
+  try {
+    const { User } = require('./models');
+    const bcrypt = require('bcryptjs');
+
+    // Check if admin exists
+    const exists = await User.findOne({ where: { email: 'admin@moringaschool.com' } });
+    if (exists) return res.send("Admin already exists!");
+
+    // Create Admin
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('admin123', salt);
+
+    await User.create({
+      name: 'System Admin',
+      email: 'admin@moringaschool.com',
+      password: hashedPassword,
+      role: 'admin'
+    });
+
+    res.send("Admin Account Created! Email: admin@moringaschool.com | Pass: admin123");
+  } catch (err) {
+    res.status(500).send("Error seeding admin: " + err.message);
+  }
+});
+
 // PORT
 const PORT = process.env.PORT || 5000;
 
