@@ -64,4 +64,18 @@ const sendCalendarInvite = async (students, session) => {
     console.log("---------------------------------------------------");
 };
 
-module.exports = { sendCalendarInvite };
+const sendEmail = async (to, subject, text) => {
+    try {
+        await transporter.sendMail({
+            from: `"Moringa Attendance" <${process.env.SMTP_USER}>`,
+            to,
+            subject,
+            text
+        });
+        console.log(`Email sent to ${to}`);
+    } catch (error) {
+        console.error("Email error:", error);
+    }
+};
+
+module.exports = { sendCalendarInvite, sendEmail };

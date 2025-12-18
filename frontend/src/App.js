@@ -74,6 +74,12 @@ function App() {
   };
 
   useEffect(() => {
+    // Check for Reset Password URL
+    const path = window.location.pathname;
+    if (path.startsWith('/reset-password/')) {
+      setAuthView('reset-password');
+    }
+
     if (token) {
       if (user.role === 'admin') {
         fetchClasses();
@@ -280,6 +286,42 @@ function App() {
     } catch (err) { alert("Error: " + err.message); }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    const email = e.target.email.value;
+    try {
+      const res = await fetch(API_BASE + "/auth/forgot-password", {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      alert(data.message);
+      if (res.ok) setAuthView('login');
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    const password = e.target.password.value;
+    const parts = window.location.pathname.split('/');
+    const uId = parts[2];
+    const uToken = parts[3];
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/reset-password/${uId}/${uToken}`, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+      });
+      const data = await res.json();
+      alert(data.message);
+      if (res.ok) {
+        window.location.href = '/'; // Redirect to home/login
+      }
+    } catch (err) { alert(err.message); }
+  };
+
   const updateProfile = async (e) => {
     e.preventDefault();
     const name = e.target.pName.value;
@@ -313,10 +355,38 @@ function App() {
       <div className="App">
         <header className="App-header"><h1>Online Attendance System</h1></header>
         <div className="App-container">
-          {authView === "login" ?
-            <Login onLogin={handleLogin} onSwitchToRegister={() => setAuthView("register")} /> :
+          {authView === "login" && (
+            <Login
+              onLogin={handleLogin}
+              onSwitchToRegister={() => setAuthView("register")}
+              onForgotPassword={() => setAuthView("forgot-password")}
+            />
+          )}
+
+          {authView === "register" && (
             <Register onLogin={handleLogin} onSwitchToLogin={() => setAuthView("login")} />
-          }
+          )}
+
+          {authView === "forgot-password" && (
+            <div className="auth-form-container">
+              <h2>Reset Password</h2>
+              <form className="auth-form" onSubmit={handleForgotPassword}>
+                <input type="email" name="email" placeholder="Enter your email" required />
+                <button type="submit">Send Reset Link</button>
+                <p style={{ marginTop: '10px', cursor: 'pointer', color: 'blue' }} onClick={() => setAuthView("login")}>Back to Login</p>
+              </form>
+            </div>
+          )}
+
+          {authView === "reset-password" && (
+            <div className="auth-form-container">
+              <h2>Set New Password</h2>
+              <form className="auth-form" onSubmit={handleResetPassword}>
+                <input type="password" name="password" placeholder="New Password" required />
+                <button type="submit">Update Password</button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     );

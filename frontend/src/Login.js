@@ -64,6 +64,11 @@ function Login({ onLogin, onSwitchToRegister }) {
           />
         </div>
         <button type="submit">Login</button>
+        <p style={{ marginTop: '10px' }}>
+          <span style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }} onClick={onForgotPassword}>
+            Forgot Password?
+          </span>
+        </p>
       </form>
       <div style={{ marginTop: '15px', textAlign: 'center' }}>
         <p>
