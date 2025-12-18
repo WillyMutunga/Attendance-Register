@@ -12,7 +12,7 @@ function auth(req, res, next) {
     try {
         // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-        req.user = decoded;
+        req.user = decoded.user; // Unwrap the 'user' object from payload
         next();
     } catch (e) {
         res.status(400).json({ message: 'Token is not valid' });
