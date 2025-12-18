@@ -9,6 +9,7 @@ const { Op } = require('sequelize');
 // ➕ POST: Mark attendance (Protected: All users)
 router.post("/", auth, async (req, res) => {
   const { name, email, course } = req.body;
+  const { Class, ClassSession } = require('../models'); // Lazy load models
 
   // Basic field check
   if (!name || !email || !course) {
@@ -16,7 +17,33 @@ router.post("/", auth, async (req, res) => {
   }
 
   try {
-    // Check if attendance already marked TODAY
+    // 1. Find the Class ID based on the course name
+    const classObj = await Class.findOne({ where: { name: course } });
+    if (!classObj) {
+      return res.status(404).json({ message: "Class not found." });
+    }
+
+    // 2. Check for an ACTIVE Session
+    // Logic: Session Start Time must be in the past 2 hours (assuming 2h class duration)
+    // AND Session Start Time must not be in the future (more than 15 mins lead time)
+    const now = new Date();
+    const twoHoursAgo = new Date(now.getTime() - (2 * 60 * 60 * 1000));
+    const fifteenMinutesFromNow = new Date(now.getTime() + (15 * 60 * 1000));
+
+    const activeSession = await ClassSession.findOne({
+      where: {
+        ClassId: classObj.id,
+        startTime: {
+          [Op.between]: [twoHoursAgo, fifteenMinutesFromNow]
+        }
+      }
+    });
+
+    if (!activeSession) {
+      return res.status(400).json({ message: "No active session found. You can only mark attendance during class time." });
+    }
+
+    // 3. Check duplicate (Existing Logic)
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
