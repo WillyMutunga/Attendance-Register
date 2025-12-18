@@ -4,6 +4,8 @@ const Attendance = require("../models/Attendance");
 
 const { auth, isAdmin } = require('../middleware/authMiddleware');
 
+const { Op } = require('sequelize');
+
 // ➕ POST: Mark attendance (Protected: All users)
 router.post("/", auth, async (req, res) => {
   const { name, email, course } = req.body;
@@ -14,6 +16,27 @@ router.post("/", auth, async (req, res) => {
   }
 
   try {
+    // Check if attendance already marked TODAY
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existing = await Attendance.findOne({
+      where: {
+        email: email,
+        course: course,
+        createdAt: {
+          [Op.between]: [startOfDay, endOfDay]
+        }
+      }
+    });
+
+    if (existing) {
+      return res.status(400).json({ message: "You have already marked attendance for this class today." });
+    }
+
     const record = await Attendance.create({ name, email, course });
     res.status(201).json({ message: "Attendance recorded", record });
   } catch (error) {

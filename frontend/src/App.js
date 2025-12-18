@@ -517,7 +517,7 @@ function App() {
             ) : (
               <div className="attendance-card" style={{ maxWidth: '800px' }}>
                 <button onClick={() => setSelectedClass(null)} style={{ marginBottom: '20px', background: '#ccc', color: '#000' }}>Back to Dashboard</button>
-                <h2 style={{ color: 'red' }}>{selectedClass.name} - Management (DEBUG)</h2>
+                <h2>{selectedClass.name} - Management</h2>
 
                 <h3 style={{ marginTop: '20px' }}>{editingSession ? 'Edit Service' : 'Schedule New Session'}</h3>
                 {editingSession && <p style={{ color: 'orange' }}>Editing: {editingSession.topic}</p>}
