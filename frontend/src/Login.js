@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import API_BASE from './config';
 
-function Login({ onLogin, onSwitchToRegister }) {
+function Login({ onLogin, onSwitchToRegister, onForgotPassword }) {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
