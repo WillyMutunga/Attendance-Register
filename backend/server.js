@@ -83,7 +83,13 @@ const PORT = process.env.PORT || 5000;
 // Sync Database and Start Server
 sequelize.sync({ alter: true }) // Update schema
   .then(() => {
-    console.log("MySQL Database Connected & Synced");
+    console.log("-----------------------------------------");
+    console.log("ENV CHECK:");
+    console.log("DATABASE_URL exists?", !!process.env.DATABASE_URL);
+    console.log("Keys available:", Object.keys(process.env).join(", "));
+    console.log("-----------------------------------------");
+
+    console.log("Database Connected & Synced"); // Removed "MySQL" hardcoded text
     app.listen(PORT, () =>
       console.log(`Backend running on http://localhost:${PORT}`)
     );
