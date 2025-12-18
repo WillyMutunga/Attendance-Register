@@ -15,8 +15,8 @@ function App() {
   const [selectedClass, setSelectedClass] = useState(null);
   const [classStudents, setClassStudents] = useState([]);
   const [classSessions, setClassSessions] = useState([]);
+  const [attendanceLogs, setAttendanceLogs] = useState([]);
 
-  // Notifications
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -119,9 +119,22 @@ function App() {
     } catch (err) { alert(err.message); }
   };
 
+  const fetchAttendanceLogs = async (className) => {
+    try {
+      const res = await fetch(`${API_BASE}/attendance?course=${encodeURIComponent(className)}`, {
+        headers: { "x-auth-token": token }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setAttendanceLogs(data);
+      else setAttendanceLogs([]);
+    } catch (err) { console.error(err); setAttendanceLogs([]); }
+  };
+
   const fetchClassDetails = async (c) => {
     setSelectedClass(c);
     setEditingSession(null);
+    setAttendanceLogs([]); // Clear previous logic
+
     try {
       const res = await fetch(`${API_BASE}/classes/${c.id}/sessions`, {
         headers: { "x-auth-token": token }
@@ -140,6 +153,9 @@ function App() {
         if (Array.isArray(data)) setClassStudents(data);
         else setClassStudents([]);
       } catch (err) { console.error(err); setClassStudents([]); }
+
+      // Fetch Attendance Logs
+      fetchAttendanceLogs(c.name);
     }
   };
 
@@ -548,13 +564,33 @@ function App() {
                     ))}
                   </tbody>
                 </table>
+
+                <h3 style={{ marginTop: '30px' }}>Attendance Logs</h3>
+                <table cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
+                      <th>Student</th>
+                      <th>Email</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceLogs.length > 0 ? attendanceLogs.map(log => (
+                      <tr key={log.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td>{log.name}</td>
+                        <td>{log.email}</td>
+                        <td>{log.time}</td>
+                      </tr>
+                    )) : <tr><td colSpan="3">No attendance records found.</td></tr>}
+                  </tbody>
+                </table>
               </div>
             )}
           </>
         )}
 
       </div>
-    </div>
+    </div >
   );
 }
 

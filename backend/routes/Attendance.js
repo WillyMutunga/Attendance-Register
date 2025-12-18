@@ -24,7 +24,11 @@ router.post("/", auth, async (req, res) => {
 // 📋 GET: View attendance (Protected: Admin only)
 router.get("/", auth, isAdmin, async (req, res) => {
   try {
+    const { course } = req.query;
+    const whereClause = course ? { course } : {};
+
     const records = await Attendance.findAll({
+      where: whereClause,
       order: [['createdAt', 'DESC']]
     });
     res.json(records);
