@@ -26,6 +26,8 @@ function App() {
   // Nav State
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [viewMode, setViewMode] = useState('dashboard'); // dashboard, my-classes, available-classes, profile
+  const [classTab, setClassTab] = useState('upcoming'); // upcoming, history
+
 
   // Handlers
   const fetchClasses = async () => {
@@ -140,6 +142,8 @@ function App() {
     setSelectedClass(c);
     setEditingSession(null);
     setAttendanceLogs([]); // Clear previous logic
+    setClassTab('upcoming');
+
 
     try {
       const res = await fetch(`${API_BASE}/classes/${c.id}/sessions`, {
@@ -526,18 +530,20 @@ function App() {
                 {selectedClass.attendanceLink && <p><strong>Class Link:</strong> <a href={selectedClass.attendanceLink} target="_blank" rel="noreferrer">Join Class</a></p>}
 
                 <h3>Upcoming Sessions</h3>
-                {classSessions.length > 0 ? (
+                {classSessions.filter(s => new Date(s.startTime).getTime() + (4 * 60 * 60 * 1000) > Date.now()).length > 0 ? (
                   <ul>
-                    {classSessions.map(s => (
-                      <li key={s.id} style={{ marginBottom: '10px' }}>
-                        <strong>{new Date(s.startTime).toLocaleString()}</strong>: {s.topic}
-                        {s.meetingLink && (
-                          <div style={{ marginTop: '4px' }}>
-                            <a href={s.meetingLink} target="_blank" rel="noreferrer" style={{ fontWeight: 'bold', color: '#007bff' }}>Join Meeting</a>
-                          </div>
-                        )}
-                      </li>
-                    ))}
+                    {classSessions
+                      .filter(s => new Date(s.startTime).getTime() + (4 * 60 * 60 * 1000) > Date.now())
+                      .map(s => (
+                        <li key={s.id} style={{ marginBottom: '10px' }}>
+                          <strong>{new Date(s.startTime).toLocaleString()}</strong>: {s.topic}
+                          {s.meetingLink && (
+                            <div style={{ marginTop: '4px' }}>
+                              <a href={s.meetingLink} target="_blank" rel="noreferrer" style={{ fontWeight: 'bold', color: '#007bff' }}>Join Meeting</a>
+                            </div>
+                          )}
+                        </li>
+                      ))}
                   </ul>
                 ) : <p>No sessions scheduled yet.</p>}
 
@@ -586,74 +592,125 @@ function App() {
               </div>
             ) : (
               <div className="attendance-card" style={{ maxWidth: '800px' }}>
-                <button onClick={() => setSelectedClass(null)} style={{ marginBottom: '20px', background: '#ccc', color: '#000' }}>Back to Dashboard</button>
-                <h2>{selectedClass.name} - Management</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <button onClick={() => setSelectedClass(null)} style={{ background: '#ccc', color: '#000', width: 'auto' }}>Back to Dashboard</button>
 
-                <h3 style={{ marginTop: '20px' }}>{editingSession ? 'Edit Service' : 'Schedule New Session'}</h3>
-                {editingSession && <p style={{ color: 'orange' }}>Editing: {editingSession.topic}</p>}
-
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <input id="sessionTopic" placeholder="Topic (e.g. Intro to Docker)" style={{ flex: 1 }} />
-                  <input id="sessionTime" type="datetime-local" style={{ flex: 1 }} />
-                  <input id="sessionLink" placeholder="Session Link (e.g. Zoom URL)" style={{ flex: '1 1 100%' }} />
-                  <div style={{ flex: '1 1 100%', display: 'flex', gap: '10px' }}>
-                    <button onClick={scheduleSession}>{editingSession ? 'Update Session' : 'Schedule'}</button>
-                    {editingSession && <button onClick={cancelEdit} style={{ background: '#ccc', color: '#000' }}>Cancel</button>}
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => setClassTab('upcoming')}
+                      style={{
+                        background: classTab === 'upcoming' ? '#101F3C' : '#f0f0f0',
+                        color: classTab === 'upcoming' ? 'white' : 'black',
+                        width: 'auto'
+                      }}
+                    >
+                      Active & Upcoming
+                    </button>
+                    <button
+                      onClick={() => setClassTab('history')}
+                      style={{
+                        background: classTab === 'history' ? '#101F3C' : '#f0f0f0',
+                        color: classTab === 'history' ? 'white' : 'black',
+                        width: 'auto'
+                      }}
+                    >
+                      History
+                    </button>
                   </div>
                 </div>
 
-                <h3>Scheduled Sessions</h3>
-                {classSessions.length > 0 ? (
-                  <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {classSessions.map(s => (
-                      <li key={s.id} style={{ padding: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong>{new Date(s.startTime).toLocaleString()}</strong> - {s.topic}
-                          {s.meetingLink && <div>(<a href={s.meetingLink} target="_blank" rel="noreferrer">Link</a>)</div>}
-                        </div>
-                        <div>
-                          <button onClick={() => startEditSession(s)} style={{ marginRight: '5px', background: '#007bff' }}>Edit</button>
-                          <button onClick={() => deleteSession(s.id)} style={{ background: '#dc3545' }}>Delete</button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p>No sessions scheduled.</p>}
+                <h2>{selectedClass.name} - Management</h2>
 
-                <h3>Enrolled Students ({classStudents.length})</h3>
-                <table cellPadding="10" style={{ width: '100%' }}>
-                  <thead>
-                    <tr><th>Name</th><th>Email</th></tr>
-                  </thead>
-                  <tbody>
-                    {classStudents.map(s => (
-                      <tr key={s.id}>
-                        <td>{s.name}</td>
-                        <td>{s.email}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {classTab === 'upcoming' && (
+                  <>
+                    <h3 style={{ marginTop: '20px' }}>{editingSession ? 'Edit Service' : 'Schedule New Session'}</h3>
+                    {editingSession && <p style={{ color: 'orange' }}>Editing: {editingSession.topic}</p>}
 
-                <h3 style={{ marginTop: '30px' }}>Attendance Logs</h3>
-                <table cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-                      <th>Student</th>
-                      <th>Email</th>
-                      <th>Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendanceLogs.length > 0 ? attendanceLogs.map(log => (
-                      <tr key={log.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td>{log.name}</td>
-                        <td>{log.email}</td>
-                        <td>{log.time}</td>
-                      </tr>
-                    )) : <tr><td colSpan="3">No attendance records found.</td></tr>}
-                  </tbody>
-                </table>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <input id="sessionTopic" placeholder="Topic (e.g. Intro to Docker)" style={{ flex: 1 }} />
+                      <input id="sessionTime" type="datetime-local" style={{ flex: 1 }} />
+                      <input id="sessionLink" placeholder="Session Link (e.g. Zoom URL)" style={{ flex: '1 1 100%' }} />
+                      <div style={{ flex: '1 1 100%', display: 'flex', gap: '10px' }}>
+                        <button onClick={scheduleSession}>{editingSession ? 'Update Session' : 'Schedule'}</button>
+                        {editingSession && <button onClick={cancelEdit} style={{ background: '#ccc', color: '#000' }}>Cancel</button>}
+                      </div>
+                    </div>
+
+                    <h3>Scheduled Sessions (Active)</h3>
+                    {classSessions.filter(s => new Date(s.startTime).getTime() + (4 * 60 * 60 * 1000) > Date.now()).length > 0 ? (
+                      <ul style={{ listStyle: 'none', padding: 0 }}>
+                        {classSessions
+                          .filter(s => new Date(s.startTime).getTime() + (4 * 60 * 60 * 1000) > Date.now())
+                          .map(s => (
+                            <li key={s.id} style={{ padding: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <strong>{new Date(s.startTime).toLocaleString()}</strong> - {s.topic}
+                                {s.meetingLink && <div>(<a href={s.meetingLink} target="_blank" rel="noreferrer">Link</a>)</div>}
+                              </div>
+                              <div>
+                                <button onClick={() => startEditSession(s)} style={{ marginRight: '5px', background: '#007bff' }}>Edit</button>
+                                <button onClick={() => deleteSession(s.id)} style={{ background: '#dc3545' }}>Delete</button>
+                              </div>
+                            </li>
+                          ))}
+                      </ul>
+                    ) : <p>No active sessions scheduled.</p>}
+
+                    <h3>Enrolled Students ({classStudents.length})</h3>
+                    <table cellPadding="10" style={{ width: '100%' }}>
+                      <thead>
+                        <tr><th>Name</th><th>Email</th></tr>
+                      </thead>
+                      <tbody>
+                        {classStudents.map(s => (
+                          <tr key={s.id}>
+                            <td>{s.name}</td>
+                            <td>{s.email}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+
+                {classTab === 'history' && (
+                  <>
+                    <h3>Past Sessions History</h3>
+                    <p style={{ fontSize: '0.9rem', color: '#666' }}>Sessions older than 4 hours.</p>
+
+                    {classSessions.filter(s => new Date(s.startTime).getTime() + (4 * 60 * 60 * 1000) <= Date.now()).length > 0 ? (
+                      <ul style={{ listStyle: 'none', padding: 0 }}>
+                        {classSessions
+                          .filter(s => new Date(s.startTime).getTime() + (4 * 60 * 60 * 1000) <= Date.now())
+                          .map(s => (
+                            <li key={s.id} style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
+                              <strong>{new Date(s.startTime).toLocaleString()}</strong> - {s.topic}
+                            </li>
+                          ))}
+                      </ul>
+                    ) : <p>No past sessions found.</p>}
+
+                    <h3 style={{ marginTop: '30px' }}>All Attendance Logs</h3>
+                    <table cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
+                          <th>Student</th>
+                          <th>Email</th>
+                          <th>Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {attendanceLogs.length > 0 ? attendanceLogs.map(log => (
+                          <tr key={log.id} style={{ borderBottom: '1px solid #eee' }}>
+                            <td>{log.name}</td>
+                            <td>{log.email}</td>
+                            <td>{log.time}</td>
+                          </tr>
+                        )) : <tr><td colSpan="3">No attendance records found.</td></tr>}
+                      </tbody>
+                    </table>
+                  </>
+                )}
               </div>
             )}
           </>
