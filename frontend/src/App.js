@@ -656,32 +656,55 @@ function App() {
                       </ul>
                     ) : <p>No active sessions scheduled.</p>}
 
-                    <h3>Enrolled Students ({classStudents.length})</h3>
-                    <table cellPadding="10" style={{ width: '100%' }}>
-                      <thead>
-                        <tr><th>Name</th><th>Email</th></tr>
-                      </thead>
-                      <tbody>
-                        {classStudents.map(s => (
-                          <tr key={s.id}>
-                            <td>{s.name}</td>
-                            <td>{s.email}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '30px' }}>
+                      <div>
+                        <h3>Enrolled Students ({classStudents.length})</h3>
+                        <table cellPadding="10" style={{ width: '100%', border: '1px solid #eee' }}>
+                          <thead>
+                            <tr><th>Name</th><th>Email</th></tr>
+                          </thead>
+                          <tbody>
+                            {classStudents.map(s => (
+                              <tr key={s.id}>
+                                <td>{s.name}</td>
+                                <td>{s.email}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div>
+                        <h3>Recent Attendance</h3>
+                        <table cellPadding="10" style={{ width: '100%', border: '1px solid #eee' }}>
+                          <thead>
+                            <tr><th>Student</th><th>Time</th></tr>
+                          </thead>
+                          <tbody>
+                            {attendanceLogs.slice(0, 10).map(log => (
+                              <tr key={log.id}>
+                                <td>{log.name}</td>
+                                <td>{log.time}</td>
+                              </tr>
+                            ))}
+                            {attendanceLogs.length === 0 && <tr><td colSpan="2">No records.</td></tr>}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </>
                 )}
 
                 {classTab === 'history' && (
                   <>
-                    <h3>Past Sessions History</h3>
-                    <p style={{ fontSize: '0.9rem', color: '#666' }}>Sessions older than 4 hours.</p>
+                    <h3>All Past Sessions</h3>
+                    <p style={{ fontSize: '0.9rem', color: '#666' }}>All sessions that have started.</p>
 
-                    {classSessions.filter(s => new Date(s.startTime).getTime() + (4 * 60 * 60 * 1000) <= Date.now()).length > 0 ? (
+                    {classSessions.filter(s => new Date(s.startTime).getTime() <= Date.now()).length > 0 ? (
                       <ul style={{ listStyle: 'none', padding: 0 }}>
                         {classSessions
-                          .filter(s => new Date(s.startTime).getTime() + (4 * 60 * 60 * 1000) <= Date.now())
+                          .filter(s => new Date(s.startTime).getTime() <= Date.now())
+                          .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)) // Newest first
                           .map(s => (
                             <li key={s.id} style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
                               <strong>{new Date(s.startTime).toLocaleString()}</strong> - {s.topic}
@@ -690,7 +713,7 @@ function App() {
                       </ul>
                     ) : <p>No past sessions found.</p>}
 
-                    <h3 style={{ marginTop: '30px' }}>All Attendance Logs</h3>
+                    <h3 style={{ marginTop: '30px' }}>Full Attendance History</h3>
                     <table cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
