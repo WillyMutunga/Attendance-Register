@@ -648,8 +648,8 @@ function App() {
                                 {s.meetingLink && <div>(<a href={s.meetingLink} target="_blank" rel="noreferrer">Link</a>)</div>}
                               </div>
                               <div>
-                                <button onClick={() => startEditSession(s)} style={{ marginRight: '5px', background: '#007bff' }}>Edit</button>
-                                <button onClick={() => deleteSession(s.id)} style={{ background: '#dc3545' }}>Delete</button>
+                                <button onClick={() => startEditSession(s)} style={{ marginRight: '5px', background: '#007bff', width: 'auto' }}>Edit</button>
+                                <button onClick={() => deleteSession(s.id)} style={{ background: '#dc3545', width: 'auto' }}>Delete</button>
                               </div>
                             </li>
                           ))}
